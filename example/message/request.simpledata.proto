@@ -1,0 +1,6 @@
+package request; 
+
+message simpledata { 
+   required int32   id = 1;
+   required string  msg = 2;
+}
