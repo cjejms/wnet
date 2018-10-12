@@ -45,9 +45,9 @@ class Buffer : public noncopyable, public std::enable_shared_from_this<Buffer> {
 
   public:
     Buffer(size_t bufSize = DEFAULT_BUFFER_SIZE): buffer(nullptr), 
-                                                          begin_pos(0), 
-                                                          end_pos(0), 
-                                                          capacity(bufSize) {
+                                                  begin_pos(0), 
+                                                  end_pos(0), 
+                                                  capacity(bufSize) {
       buffer = new char[bufSize + 1];
     }
 
