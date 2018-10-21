@@ -1,8 +1,6 @@
 # wnet
 
-## event-driven multithreading TCP server
-
-### feature
+wnet is an event-driven multithreading TCP server written in C++11
 
 * work on Linux only, rely on epoll and timerfd for core
 * write in C++11, manage resources and objects with smart pointer
@@ -13,9 +11,9 @@
 * worker threads amount configurable to make full use of multi-core CPU
 
 
-### example
+## example
 
-#### an echo server
+### an echo server
 
 ```cpp
 // example/echo_server.cc
@@ -32,7 +30,7 @@ server->setOnReceiveDataHandler(
 server->run();
 ```
 
-#### a server with subrequests
+### a server with subrequests
 
 ```cpp
 // example/complex_server.cc
