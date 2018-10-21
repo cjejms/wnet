@@ -1,6 +1,6 @@
 
 TOP_PATH = $(shell pwd)
-SRC_PATH = $(TOP_PATH)/src/
+SRC_PATH = $(TOP_PATH)/wnet/
 EXAMPLE_PATH = $(TOP_PATH)/example/
 
 src := $(wildcard $(SRC_PATH)*.cc)

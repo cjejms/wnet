@@ -18,6 +18,10 @@ void TCPServer::bindPort() {
   FdCtrl::addFdFlag(server_fd, FD_CLOEXEC);
 }
 
+void TCPServer::setEnableConnectionKeepAlive() {
+  enableConnectionKeepAlive = true;
+}
+
 void TCPServer::setOnConnectedHandler(ConnectionHandler handler) {
   if(running) {
     LOG(ERROR, "[TCPServer] server running, register onConnectedHandler failed");
@@ -93,7 +97,9 @@ void TCPServer::handleNewConnection() {
     connection->setClientInfo(clientIP);
     
     eventPoll->addConnection(connection);
-    eventPoll->connectionIniIdleTimeout(connection);      // kill the connection if idle for some time
+    if(enableConnectionKeepAlive) {
+      eventPoll->connectionIniIdleTimeout(connection);      // kill the connection if idle for some time
+    }
  
     eventPoll->addEventListener(connection_fd, EventPoll::READ_EVENT | EventPoll::WRITE_EVENT);
   }

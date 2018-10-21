@@ -32,6 +32,8 @@ class TCPServer : public noncopyable, public std::enable_shared_from_this<TCPSer
     
     bool running = false;
 
+    bool enableConnectionKeepAlive = false;
+
     void bindPort();
 
   public:
@@ -44,6 +46,8 @@ class TCPServer : public noncopyable, public std::enable_shared_from_this<TCPSer
       ::close(server_fd);
     }
 
+    void setEnableConnectionKeepAlive();
+    
     void setOnConnectedHandler(ConnectionHandler handler);
 
     void setOnReceiveDataHandler(ConnectionHandler handler);
