@@ -49,7 +49,8 @@ server->setOnReceiveDataHandler(
     
     // server code in example/simple_server_2.cc
     // connect to 127.0.0.1:10002
-    // server 127.0.0.1:10002 response nothing and will reject on timeout (3 s, )
+    // server 127.0.0.1:10002 response nothing and will reject on timeout (3 s, 
+    // SUB_REQUEST_TIMEOUT_SECONDS by default, configurable in wnet/Config.h)
     auto requestResult2 = Connector::initSubRequest("127.0.0.1", 
                                                     10002, 
                                                     requestData, 
