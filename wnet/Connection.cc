@@ -128,6 +128,13 @@ void Connection::reject(std::shared_ptr<Connection> masterConnection) {
   terminate();
 }
 
+void Connection::requestResolved() {
+  subConnectionCallBackHandler = nullptr;
+  if(!inputBuf->empty()) {
+    issueIOEventToSelf(READ_EVENT);
+  }
+}
+
 void Connection::handleEvent(std::shared_ptr<Event> event) {
   switch(event->getType()) {
     case IO_EVENT:

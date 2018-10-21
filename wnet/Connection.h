@@ -145,10 +145,8 @@ class Connection : public noncopyable, public std::enable_shared_from_this<Conne
     // only for subconnection
     void reject(std::shared_ptr<Connection> masterConnection);
 
-    void requestResolved() {
-      subConnectionCallBackHandler = nullptr;
-    }
-
+    void requestResolved();
+    
     // handle connection assigned to this connection, called by EventLoop in working threads
     void handleEvent(std::shared_ptr<Event> event);
     
