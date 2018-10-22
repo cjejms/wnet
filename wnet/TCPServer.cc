@@ -97,7 +97,7 @@ void TCPServer::handleNewConnection() {
     connection->setClientInfo(clientIP);
     
     eventPoll->addConnection(connection);
-    if(enableConnectionKeepAlive) {
+    if(!enableConnectionKeepAlive) {
       eventPoll->connectionIniIdleTimeout(connection);      // kill the connection if idle for some time
     }
  
