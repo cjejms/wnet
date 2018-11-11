@@ -67,12 +67,12 @@ class Daemon {
       ::strcat(fileNameBuf, ".pid");
       FILE* pidFile = ::fopen(fileNameBuf,"w+");
       if(!pidFile) {
-        LOG(FATAL, "[Daemon] open pid file failed, pid file path: %s", fileNameBuf);
+        LOG(LogLevel::FATAL, "[Daemon] open pid file failed, pid file path: %s", fileNameBuf);
         ::exit(EXIT_FAILURE);
       }
       ::fprintf(pidFile, "%d", static_cast<int>(::getpid()));
       ::fclose(pidFile);
-      LOG(INFO, "[Daemon] running in Daemon mode");
+      LOG(LogLevel::INFO, "[Daemon] running in Daemon mode");
     }
 };
 

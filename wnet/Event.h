@@ -8,7 +8,12 @@ namespace wnet {
 
 class Connection;
 
-enum IOEventType { READ_EVENT = 1, WRITE_EVENT, READ_AND_WRITE_EVENT };
+enum class IOEventType { 
+  READ_EVENT = 1, 
+  WRITE_EVENT, 
+  READ_AND_WRITE_EVENT 
+};
+
 class IOEvent {
   private:
     const int event_fd = -1;
@@ -51,7 +56,12 @@ class TimeoutEvent {
     }
 };
 
-enum SubConnectionEventType { PENDING = 1, RESOLVED, REJECTED };
+enum class SubConnectionEventType { 
+  PENDING = 1, 
+  RESOLVED, 
+  REJECTED 
+};
+
 class SubConnectionEvent {
   private:
     std::shared_ptr<Connection> masterConnection;
@@ -80,13 +90,38 @@ class SubConnectionEvent {
     }
 };
 
+enum class ControlEventType { 
+  SHUT_DOWN = 1
+};
+
+class ControlEvent {
+  private:
+    ControlEventType eventType;
+
+  public:
+    ControlEvent(ControlEventType _eventType): eventType(_eventType) {}
+
+    ~ControlEvent() {}
+
+    ControlEventType getEvent() {
+      return eventType;
+    }
+};
+
 union EventDetail {
   IOEvent*            ioEvent;
   TimeoutEvent*       timeoutEvent;
   SubConnectionEvent* subConnectionEvent;
+  ControlEvent*       controlEvent;
 };
 
-enum EventType { IO_EVENT = 1, TIMEOUT_EVENT, SUBCONNECTION_EVENT };
+enum class EventType { 
+  IO_EVENT = 1, 
+  TIMEOUT_EVENT, 
+  SUBCONNECTION_EVENT,
+  CONTROL_EVENT
+};
+
 class Event {
   private:
     const EventType type;
@@ -98,16 +133,20 @@ class Event {
 
     ~Event() {
       switch(type) {
-        case IO_EVENT:
+        case EventType::IO_EVENT:
           delete eventDetail.ioEvent;
           break;
           
-        case TIMEOUT_EVENT:
+        case EventType::TIMEOUT_EVENT:
           delete eventDetail.timeoutEvent;
           break;
 
-        case SUBCONNECTION_EVENT:
+        case EventType::SUBCONNECTION_EVENT:
           delete eventDetail.subConnectionEvent;
+          break;
+
+        case EventType::CONTROL_EVENT:
+          delete eventDetail.controlEvent;
           break;
       }
        

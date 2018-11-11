@@ -33,8 +33,8 @@ class RequestResult : public noncopyable {
     RequestResult(std::shared_ptr<Connection> _masterConnection): masterConnection(_masterConnection),
                                                                   subConnection(nullptr),
                                                                   message(nullptr),
-                                                                  resultType(PENDING),
-                                                                  resultDetail(PARSING) {}
+                                                                  resultType(SubConnectionEventType::PENDING),
+                                                                  resultDetail(ParseResult::PARSING) {}
 
     void setSubConnection(std::shared_ptr<Connection> _subConnection) {
       subConnection = _subConnection;
@@ -45,15 +45,15 @@ class RequestResult : public noncopyable {
     }
 
     bool pending() {
-      return resultType == PENDING;
+      return resultType == SubConnectionEventType::PENDING;
     }
 
     bool resolved() {
-      return resultType == RESOLVED;
+      return resultType == SubConnectionEventType::RESOLVED;
     }
 
     bool rejected() {
-      return resultType == REJECTED;
+      return resultType == SubConnectionEventType::REJECTED;
     }
 
     ParseResult getResultDetail() {

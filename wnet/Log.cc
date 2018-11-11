@@ -2,7 +2,7 @@
 
 using namespace wnet;
 
-LogLevel Log::logLevel = DEBUG;
+LogLevel Log::level = LogLevel::DEBUG;
 std::string Log::logDirectory = "";
 bool Log::isAddLogToFile = false;
 bool Log::isWithLocation = false;

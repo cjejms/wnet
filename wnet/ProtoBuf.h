@@ -11,7 +11,7 @@ class Buffer;
 
 using Message = ::google::protobuf::Message;
 
-enum ParseResult { 
+enum class ParseResult { 
   PARSING = 1,
   PARSE_SUCCESS,
   MESSAGE_INCOMPLETED,

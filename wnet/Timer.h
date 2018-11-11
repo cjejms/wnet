@@ -27,7 +27,7 @@ class Timer : public noncopyable {
       // Setting either field of timerDetail.it_value to a nonzero value arms the timer.
       // Setting both fields of timerDetail.it_value to zero disarms the timer.
       if(::timerfd_settime(timer_fd, 0, &timerDetail, NULL) == -1) {
-        LOG(FATAL, "[Timer][timerfd_settime()] specify timer failed, error: [%d]%s", errno, ::strerror(errno));
+        LOG(LogLevel::FATAL, "[Timer][timerfd_settime()] specify timer failed, error: [%d]%s", errno, ::strerror(errno));
         ::exit(EXIT_FAILURE);
       }
     }
@@ -36,7 +36,7 @@ class Timer : public noncopyable {
     Timer():expireTimes(0), expireTimesSinceInit(0) {
       timer_fd = ::timerfd_create(CLOCK_MONOTONIC, 0);   // a nonsettable clock that is not affected by discontinuous changes in the system clock
       if(timer_fd == -1) {
-        LOG(FATAL, "[Timer][timerfd_create()] timer_fd initialize failed, error: [%d]%s", errno, ::strerror(errno));
+        LOG(LogLevel::FATAL, "[Timer][timerfd_create()] timer_fd initialize failed, error: [%d]%s", errno, ::strerror(errno));
         ::exit(EXIT_FAILURE);
       }
     }
@@ -49,7 +49,7 @@ class Timer : public noncopyable {
       expireTimes = 0;
       size_t readResult = ::read(timer_fd, &expireTimes, sizeof expireTimes);
       if(readResult <= 0) {
-        LOG(FATAL, "[Timer][read()] something's wrong, error: [%d]%s", errno, ::strerror(errno));
+        LOG(LogLevel::FATAL, "[Timer][read()] something's wrong, error: [%d]%s", errno, ::strerror(errno));
       }
       expireTimesSinceInit += expireTimes;
       return expireTimes;

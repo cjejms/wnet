@@ -16,28 +16,22 @@ class TimeoutManager;
 class EventLoop : public noncopyable {
   private: 
     int id;  
-    bool running = false;
 
     std::shared_ptr<EventQueue> eventQueue;
     std::shared_ptr<TimeoutManager> timeoutManager;
 
   public:
     EventLoop(int _id, std::shared_ptr<EventQueue> _queue): id(_id), 
-                                                            running(true),
                                                             eventQueue(_queue) {
       timeoutManager = std::make_shared<TimeoutManager>();
     }
 
     ~EventLoop() {
-      LOG(DEBUG, "[EventLoop] destructing");
+      LOG(LogLevel::DEBUG, "[EventLoop] destructing");
     }
 
     int getID() {
       return id;
-    }
-
-    void shutdown() {
-      running = false;
     }
     
     std::shared_ptr<TimeoutManager> getTimeoutManager() {

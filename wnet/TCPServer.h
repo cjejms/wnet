@@ -42,7 +42,7 @@ class TCPServer : public noncopyable, public std::enable_shared_from_this<TCPSer
                             onReceiveDataHandler(nullptr), 
                             onDisconnectingHandler(nullptr) {}
     ~TCPServer() {
-      LOG(DEBUG, "[TCPServer] destructing");
+      LOG(LogLevel::DEBUG, "[TCPServer] destructing");
       ::close(server_fd);
     }
 

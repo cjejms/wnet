@@ -6,11 +6,11 @@ using namespace wnet;
 void RequestResult::resolve(std::shared_ptr<Message> _message) {
   if(pending()) {
     message = _message;
-    resultType = RESOLVED;
-    resultDetail = PARSE_SUCCESS;
+    resultType = SubConnectionEventType::RESOLVED;
+    resultDetail = ParseResult::PARSE_SUCCESS;
     subConnection->resolve(masterConnection);
     Connector::insertIntoConnectionPool(subConnection);
-    LOG(DEBUG, "[RequestResult][subConnection][fd %d] subConnection RESOLVED", subConnection->get_fd());
+    LOG(LogLevel::DEBUG, "[RequestResult][subConnection][fd %d] subConnection RESOLVED", subConnection->get_fd());
   }
   
 }
@@ -18,10 +18,10 @@ void RequestResult::resolve(std::shared_ptr<Message> _message) {
 void RequestResult::reject(ParseResult _resultDetail, std::shared_ptr<Message> _message) {
   if(pending()) {
     message = _message;
-    resultType = REJECTED;
+    resultType = SubConnectionEventType::REJECTED;
     resultDetail = _resultDetail;
     subConnection->reject(masterConnection);
-    LOG(DEBUG, "[RequestResult][subConnection][fd %d] subConnection REJECTED", subConnection->get_fd());
+    LOG(LogLevel::DEBUG, "[RequestResult][subConnection][fd %d] subConnection REJECTED", subConnection->get_fd());
   }
 }
 
@@ -113,9 +113,9 @@ std::shared_ptr<Connection> Connector::connectTo( std::string ip,
 
   int result = ::connect(client_fd, reinterpret_cast<struct sockaddr*>(&serverAddr), sizeof serverAddr);
   
-  LOG(DEBUG, "[Connector][fd %d][connect()] return: %d error: [%d]%s", client_fd, result, errno, ::strerror(errno));
+  LOG(LogLevel::DEBUG, "[Connector][fd %d][connect()] return: %d error: [%d]%s", client_fd, result, errno, ::strerror(errno));
   if(result == -1 && errno == EINPROGRESS) {
-    LOG(INFO, "[Connector][fd %d] new active connection established", client_fd);
+    LOG(LogLevel::INFO, "[Connector][fd %d] new active connection established", client_fd);
   } else {
     return nullptr;
   }
@@ -124,7 +124,7 @@ std::shared_ptr<Connection> Connector::connectTo( std::string ip,
   // construct connection object and register to eventpoll connection set
   auto connection = std::make_shared<Connection>( client_fd, 
                                                   eventPoll, 
-                                                  ACTIVE, 
+                                                  ConnectionType::ACTIVE, 
                                                   onConnectedHandler,
                                                   onReceiveDataHandler,
                                                   onDisconnectingHandler );
@@ -155,7 +155,7 @@ std::shared_ptr<RequestResult> Connector::initSubRequest( std::string ip,
       // reject this request and shut down subconnection on timeout
       subConnection->setTimeout(timeoutSeconds, [=]{
         if(requestResult->pending()) {
-          requestResult->reject(TIMEOUT);
+          requestResult->reject(ParseResult::TIMEOUT);
           subConnection->terminate();
         }
       });
@@ -166,11 +166,11 @@ std::shared_ptr<RequestResult> Connector::initSubRequest( std::string ip,
     [=](Connection* const subConnection) {
       ParseResult parseResult;
       std::shared_ptr<Message> responseData = subConnection->decodeMessage(parseResult);
-      if(parseResult == PARSE_SUCCESS) {
+      if(parseResult == ParseResult::PARSE_SUCCESS) {
         // store the reponse data and generate SubConnectionEvent to notify master connection
         requestResult->resolve(responseData);
       } else {
-        if(parseResult != MESSAGE_INCOMPLETED) {
+        if(parseResult != ParseResult::MESSAGE_INCOMPLETED) {
           requestResult->reject(parseResult);
         }
       }
@@ -179,7 +179,7 @@ std::shared_ptr<RequestResult> Connector::initSubRequest( std::string ip,
     // onDisconnectingHandler	//
     ////////////////////////////
     [=](Connection* const subConnection) {
-      requestResult->reject(CONNECTION_CLOSED_BY_PEER);
+      requestResult->reject(ParseResult::CONNECTION_CLOSED_BY_PEER);
     }
   );
   requestResult->setSubConnection(_subConnection);

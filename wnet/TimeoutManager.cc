@@ -19,7 +19,7 @@ TimeoutEntry::~TimeoutEntry() {
 std::shared_ptr<Connection> TimeoutEntry::getConnection() {
   auto connectionPtr = connection.lock();
   if (!connectionPtr) {
-    LOG(DEBUG, "[TimeoutEntry] connection already perished");
+    LOG(LogLevel::DEBUG, "[TimeoutEntry] connection already perished");
     return nullptr;
   } else {
     return connectionPtr;

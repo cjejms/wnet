@@ -50,7 +50,7 @@ class EventPoll : public noncopyable, public std::enable_shared_from_this<EventP
 			epollEvent.data.fd = event_fd;
 			epollEvent.events = event;
 			if(::epoll_ctl(epoll_fd, operation, event_fd, &epollEvent) == -1) {
-				LOG(FATAL, "[EventPoll][fd %d][epoll_ctl()] edit fd event register failed, event: %d, error: [%d]%s", event_fd, event, errno, ::strerror(errno));
+				LOG(LogLevel::FATAL, "[EventPoll][fd %d][epoll_ctl()] edit fd event register failed, event: %d, error: [%d]%s", event_fd, event, errno, ::strerror(errno));
 				::exit(EXIT_FAILURE);
 			}
 		}
@@ -74,7 +74,7 @@ class EventPoll : public noncopyable, public std::enable_shared_from_this<EventP
 		static std::shared_ptr<EventPoll> getInstance();
 
 		~EventPoll() {
-  		LOG(DEBUG, "[EventPoll] destructing");
+  		LOG(LogLevel::DEBUG, "[EventPoll] destructing");
 			::close(epoll_fd);
 		}
 
@@ -113,10 +113,6 @@ class EventPoll : public noncopyable, public std::enable_shared_from_this<EventP
 		void eventDispatcher(std::shared_ptr<Event> event);
 
 		void shutdown();
-
-		
-
-		
 
 };
 

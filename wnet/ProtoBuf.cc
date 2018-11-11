@@ -5,7 +5,7 @@
 
 using namespace wnet;
 
-thread_local ParseResult ProtoBuf::parseResult = PARSING;
+thread_local ParseResult ProtoBuf::parseResult = ParseResult::PARSING;
 
 using Descriptor = ::google::protobuf::Descriptor;
 using DescriptorPool = ::google::protobuf::DescriptorPool;
@@ -36,7 +36,7 @@ void ProtoBuf::encodeIntoBuffer(std::shared_ptr<Message> message, std::shared_pt
 }
 
 std::shared_ptr<Message> ProtoBuf::decodeFromBuffer(std::shared_ptr<Buffer> buffer) {
-  parseResult = PARSING;
+  parseResult = ParseResult::PARSING;
 
   auto bufSize = buffer->size();
   auto curr_pos = buffer->begin();
@@ -44,14 +44,14 @@ std::shared_ptr<Message> ProtoBuf::decodeFromBuffer(std::shared_ptr<Buffer> buff
 
   auto decodedSize = sizeofSizeField * 2;
   if (bufSize < decodedSize) {  
-    parseResult = MESSAGE_INCOMPLETED;
+    parseResult = ParseResult::MESSAGE_INCOMPLETED;
     return nullptr;
   }
 
   auto typeNameSize = buffer->fetch_uint32();
   decodedSize += typeNameSize;
   if (bufSize < decodedSize) {      
-    parseResult = MESSAGE_INCOMPLETED;
+    parseResult = ParseResult::MESSAGE_INCOMPLETED;
     return nullptr;
   }
 
@@ -59,7 +59,7 @@ std::shared_ptr<Message> ProtoBuf::decodeFromBuffer(std::shared_ptr<Buffer> buff
   auto messageSize = buffer->fetch_uint32(messageSizePos);
   decodedSize += messageSize;
   if (bufSize < decodedSize) {    
-    parseResult = MESSAGE_INCOMPLETED;  
+    parseResult = ParseResult::MESSAGE_INCOMPLETED;  
     return nullptr;
   }
   
@@ -67,15 +67,15 @@ std::shared_ptr<Message> ProtoBuf::decodeFromBuffer(std::shared_ptr<Buffer> buff
   buffer->consume(decodedSize);
   auto message = getMessageViaName(std::string(curr_pos + sizeofSizeField, typeNameSize));
   if(!message) {    
-    parseResult = UNKNOWN_MESSAGE_TYPE;
+    parseResult = ParseResult::UNKNOWN_MESSAGE_TYPE;
     return nullptr;
   }
 
   if(!message->ParseFromArray(messageSizePos + sizeofSizeField, messageSize)) {
-    parseResult = PARSE_ERROR;
+    parseResult = ParseResult::PARSE_ERROR;
     return nullptr;
   }
-  parseResult = PARSE_SUCCESS;
+  parseResult = ParseResult::PARSE_SUCCESS;
   return message;
 }
 

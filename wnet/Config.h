@@ -8,9 +8,6 @@ constexpr int DEFAULT_BUFFER_SIZE = 1024;
 // used in Connector
 constexpr int SUB_REQUEST_TIMEOUT_SECONDS = 6;  
 
-// used in EventLoop
-constexpr int EVENT_LOOP_SLEEP_MILLISECONDS = 400;   // milliseconds
-
 // used in EventPoll
 constexpr int EVENT_LOOP_COUNT = 2;  
 constexpr int MAX_READY_EVENT_PER_POLL = 20;

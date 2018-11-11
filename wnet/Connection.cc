@@ -14,14 +14,14 @@ void Connection::receiveData() {
 
     if(readLen > 0) {     // read normally
       if(isConnected()) {
-        // when DISCONNECTING, input data is ignored
+        // when ConnectionStatus::DISCONNECTING, input data is ignored
         inputBuf->addSize(readLen);
-        LOG(DEBUG, "[Connection][fd %d] read %d bytes", fd, static_cast<int>(readLen));
+        LOG(LogLevel::DEBUG, "[Connection][fd %d] read %d bytes", fd, static_cast<int>(readLen));
       }
       continue;
     }
     if(readLen == 0) {    
-      LOG(INFO, "[Connection][fd %d] connection closed by peer", fd);
+      LOG(LogLevel::INFO, "[Connection][fd %d] connection closed by peer", fd);
       terminate();    // closed by peer, just terminate this connection 
       return;
     }
@@ -33,7 +33,7 @@ void Connection::receiveData() {
         readable = false;
         return;
       }
-      LOG(DEBUG, "[Connection][fd %d][read() -1] error: [%d]%s", fd, errno, ::strerror(errno));
+      LOG(LogLevel::DEBUG, "[Connection][fd %d][read() -1] error: [%d]%s", fd, errno, ::strerror(errno));
     }
     terminate();
     return;
@@ -49,7 +49,7 @@ void Connection::sendData() {
     ssize_t writeLen = ::write(fd, outputBuf->begin(), outputBuf->size());
     
     if(writeLen > 0) {
-      LOG(DEBUG, "[Connection][fd %d] write %d bytes", fd, static_cast<int>(writeLen));
+      LOG(LogLevel::DEBUG, "[Connection][fd %d] write %d bytes", fd, static_cast<int>(writeLen));
       outputBuf->consume(writeLen);
       continue;
     }
@@ -62,7 +62,7 @@ void Connection::sendData() {
         writable = false;
         return;
       }
-      LOG(DEBUG, "[Connection][fd %d][write() -1] error: [%d]%s", fd, errno, ::strerror(errno));
+      LOG(LogLevel::DEBUG, "[Connection][fd %d][write() -1] error: [%d]%s", fd, errno, ::strerror(errno));
       terminate();
     }
     return;
@@ -108,9 +108,9 @@ void Connection::resolve(std::shared_ptr<Connection> masterConnection) {
   detail.subConnectionEvent = new SubConnectionEvent(
     masterConnection, 
     shared_from_this(), 
-    RESOLVED
+    SubConnectionEventType::RESOLVED
   );
-  issueEvent(std::make_shared<Event>(SUBCONNECTION_EVENT, detail));
+  issueEvent(std::make_shared<Event>(EventType::SUBCONNECTION_EVENT, detail));
   // clear handlers
   onConnectedHandler = nullptr;
   onReceiveDataHandler = nullptr;
@@ -122,35 +122,35 @@ void Connection::reject(std::shared_ptr<Connection> masterConnection) {
   detail.subConnectionEvent = new SubConnectionEvent(
     masterConnection, 
     shared_from_this(), 
-    REJECTED
+    SubConnectionEventType::REJECTED
   );
-  issueEvent(std::make_shared<Event>(SUBCONNECTION_EVENT, detail));
+  issueEvent(std::make_shared<Event>(EventType::SUBCONNECTION_EVENT, detail));
   terminate();
 }
 
 void Connection::requestResolved() {
   subConnectionCallBackHandler = nullptr;
   if(!inputBuf->empty()) {
-    issueIOEventToSelf(READ_EVENT);
+    issueIOEventToSelf(IOEventType::READ_EVENT);
   }
 }
 
 void Connection::handleEvent(std::shared_ptr<Event> event) {
   switch(event->getType()) {
-    case IO_EVENT:
+    case EventType::IO_EVENT:
       {
         // update readable & writable status according to IOEvent
         IOEvent* activeIoEvent = event->getEventDetail().ioEvent;
         switch(activeIoEvent->getEvent()) {
-          case READ_EVENT:
+          case IOEventType::READ_EVENT:
             readable = true;
             break;
 
-          case WRITE_EVENT:
+          case IOEventType::WRITE_EVENT:
             writable = true;
             break;
             
-          case READ_AND_WRITE_EVENT:
+          case IOEventType::READ_AND_WRITE_EVENT:
             readable = true;
             writable = true;
             break;
@@ -158,28 +158,28 @@ void Connection::handleEvent(std::shared_ptr<Event> event) {
       }
       break;
 
-    case SUBCONNECTION_EVENT:
+    case EventType::SUBCONNECTION_EVENT:
       {
         SubConnectionEvent* activeSubConnectionEvent = event->getEventDetail().subConnectionEvent;
         if(isConnected() && subConnectionCallBackHandler) {
-          LOG(DEBUG, "[Connection][fd %d] SUBCONNECTION_EVENT activated, subconnection[fd %d]", fd, activeSubConnectionEvent->getSubConnection()->get_fd());
+          LOG(LogLevel::DEBUG, "[Connection][fd %d] SUBCONNECTION_EVENT activated, subconnection[fd %d]", fd, activeSubConnectionEvent->getSubConnection()->get_fd());
           subConnectionCallBackHandler(this);
         }
       }
       break;
 
     default:
-      LOG(ERROR, "[Connection] receiving unsupported event");
+      LOG(LogLevel::ERROR, "[Connection] receiving unsupported event");
       shutdown();
       break;
   }
-  LOG(DEBUG, "[Connection][fd %d][status %d][ readable %d][writable %d]", fd, status, readable, writable);
+  LOG(LogLevel::DEBUG, "[Connection][fd %d][status %d][ readable %d][writable %d]", fd, status, readable, writable);
   
   // call on connected handler 
-  if(status == CONNECTING) {
-    status = CONNECTED;
+  if(status == ConnectionStatus::CONNECTING) {
+    status = ConnectionStatus::CONNECTED;
     if(onConnectedHandler) {
-      LOG(DEBUG, "[Connection][fd %d] call onConnectedHandler", fd);
+      LOG(LogLevel::DEBUG, "[Connection][fd %d] call onConnectedHandler", fd);
       onConnectedHandler(this);
     }
   }
@@ -190,7 +190,7 @@ void Connection::handleEvent(std::shared_ptr<Event> event) {
   if(isConnected()) {
     if(inputBuf->size() > 0 && onReceiveDataHandler && !subConnectionCallBackHandler) {
       // data remain to handle, call onReceiveDataHandler 
-      LOG(DEBUG, "[Connection][fd %d] call onReceiveDataHandler", fd);
+      LOG(LogLevel::DEBUG, "[Connection][fd %d] call onReceiveDataHandler", fd);
       onReceiveDataHandler(this);
     }
   }
@@ -199,11 +199,11 @@ void Connection::handleEvent(std::shared_ptr<Event> event) {
   
   // simulate level trigger mode readable event (EPOLLLT | EPOLLIN)
   if(isConnected() && readable) {  
-    issueIOEventToSelf(READ_EVENT);
+    issueIOEventToSelf(IOEventType::READ_EVENT);
   }
 
   if(isDisconnecting() && outputBuf->empty()) {  
-    // connection DISCONNECTING and all data have been sent 
+    // connection ConnectionStatus::DISCONNECTING and all data have been sent 
     // send FIN to peer
     ::shutdown(fd, SHUT_WR);
   }
@@ -217,7 +217,7 @@ void Connection::clockIn() {
   if(getTimeoutEntry()) {
     eventPoll->connectionClockIn(thisConnection());
   } else {
-    LOG(DEBUG, "[Connection][fd %d] this connection doesn't support IDLE timeout", fd);
+    LOG(LogLevel::DEBUG, "[Connection][fd %d] this connection doesn't support IDLE timeout", fd);
   }
   
 }
@@ -232,41 +232,41 @@ std::shared_ptr<Message> Connection::decodeMessage(ParseResult& parseResult) {
 
 void Connection::issueIOEventToSelf(IOEventType event) {
   // std::this_thread::sleep_for(std::chrono::seconds(1));   // for debug, will be removed
-  LOG(DEBUG, "[Connection][fd %d][event %d] going back to queue, will process later", fd, event);
+  LOG(LogLevel::DEBUG, "[Connection][fd %d][event %d] going back to queue, will process later", fd, event);
   
   EventDetail detail;
   detail.ioEvent = new IOEvent(fd, event, shared_from_this());
-  issueEvent(std::make_shared<Event>(IO_EVENT, detail));
+  issueEvent(std::make_shared<Event>(EventType::IO_EVENT, detail));
 }
 
 void Connection::reInit(ConnectionHandler _onConnectedHandler, 
                         ConnectionHandler _onReceiveDataHandler, 
                         ConnectionHandler _onDisconnectingHandler) {
-  status = CONNECTING;
+  status = ConnectionStatus::CONNECTING;
   onConnectedHandler = _onConnectedHandler;
   onReceiveDataHandler = _onReceiveDataHandler;
   onDisconnectingHandler = _onDisconnectingHandler;
   // to trigger _onConnectedHandler and send request data
-  issueIOEventToSelf(WRITE_EVENT);
+  issueIOEventToSelf(IOEventType::WRITE_EVENT);
 }
 
 // shut down this connection gracefully
 void Connection::shutdown() {
-  if(status < DISCONNECTING) {
+  if(status < ConnectionStatus::DISCONNECTING) {
     // https://stackoverflow.com/questions/8874021/close-socket-directly-after-send-unsafe
     
     // send remaining data in output buffer,
     // then send a FIN to peer, and expecting receiving a FIN back
-    status = DISCONNECTING;
-    LOG(INFO, "[Connection][fd %d] shutting down gracefully", fd);
+    status = ConnectionStatus::DISCONNECTING;
+    LOG(LogLevel::INFO, "[Connection][fd %d] shutting down gracefully", fd);
   }
 }
 
 void Connection::terminate() {
-  if(status < DISCONNECTED) {
-    status = DISCONNECTED;
+  if(status < ConnectionStatus::DISCONNECTED) {
+    status = ConnectionStatus::DISCONNECTED;
 
-    if(type == ACTIVE) {
+    if(type == ConnectionType::ACTIVE) {
       Connector::removeFromConnectionPool(shared_from_this());
     }
 

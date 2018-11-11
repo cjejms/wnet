@@ -20,7 +20,17 @@ class EventPoll;
 class RequestResult;
 class TimeoutEntry;
 
-enum ConnectionType { ACTIVE = 1, PASSIVE };
+enum class ConnectionType {
+  ACTIVE = 1, 
+  PASSIVE
+};
+
+enum class ConnectionStatus { 
+  CONNECTING = 1, 
+  CONNECTED, 
+  DISCONNECTING, 
+  DISCONNECTED 
+};
 
 using ConnectionHandler = std::function<void(Connection* const)>;
 
@@ -35,7 +45,6 @@ class Connection : public noncopyable, public std::enable_shared_from_this<Conne
 
     std::weak_ptr<TimeoutEntry> timeoutEntry;
 
-    enum ConnectionStatus { CONNECTING = 1, CONNECTED, DISCONNECTING, DISCONNECTED };
     ConnectionStatus status;
 
     ConnectionType type;
@@ -63,12 +72,12 @@ class Connection : public noncopyable, public std::enable_shared_from_this<Conne
   public:
     Connection( int _fd, 
                 std::shared_ptr<EventPoll> _eventPoll, 
-                ConnectionType _type = PASSIVE,
+                ConnectionType _type = ConnectionType::PASSIVE,
                 ConnectionHandler _onConnectedHandler = nullptr, 
                 ConnectionHandler _onReceiveDataHandler = nullptr, 
                 ConnectionHandler _onDisconnectingHandler = nullptr): fd(_fd), 
                                                               eventPoll(_eventPoll),
-                                                              status(CONNECTING),
+                                                              status(ConnectionStatus::CONNECTING),
                                                               type(_type),
                                                               onConnectedHandler(_onConnectedHandler), 
                                                               onReceiveDataHandler(_onReceiveDataHandler), 
@@ -82,8 +91,8 @@ class Connection : public noncopyable, public std::enable_shared_from_this<Conne
     }
 
     ~Connection() {
-      LOG(DEBUG, "[Connection][fd %d] destructed", fd);
-      if(status < DISCONNECTED) {
+      LOG(LogLevel::DEBUG, "[Connection][fd %d] destructed", fd);
+      if(status < ConnectionStatus::DISCONNECTED) {
         terminate();
       }
     }
@@ -165,7 +174,7 @@ class Connection : public noncopyable, public std::enable_shared_from_this<Conne
         clockIn();
         outputBuf->append(data);
       } else {
-        LOG(DEBUG, "[Connection][fd %d][status %d] connection not connected, unable to write data", fd, status);
+        LOG(LogLevel::DEBUG, "[Connection][fd %d][status %d] connection not connected, unable to write data", fd, status);
       }
     }
 
@@ -176,11 +185,11 @@ class Connection : public noncopyable, public std::enable_shared_from_this<Conne
     void issueIOEventToSelf(IOEventType event);
 
     bool isConnected() {
-      return status == CONNECTED;
+      return status == ConnectionStatus::CONNECTED;
     }
 
     bool isDisconnecting() {
-      return status == DISCONNECTING;
+      return status == ConnectionStatus::DISCONNECTING;
     }
 
     // for recycling active connection
@@ -188,7 +197,8 @@ class Connection : public noncopyable, public std::enable_shared_from_this<Conne
                 ConnectionHandler _onReceiveDataHandler = nullptr, 
                 ConnectionHandler _onDisconnectingHandler = nullptr);
 
-    // gracefully, just mark this connection DISCONNECTING, data remaining in outputBuf will still be sent
+    // gracefully, just mark this connection ConnectionStatus::DISCONNECTING, 
+    // data remaining in outputBuf will still be sent
     void shutdown();
 
     // actually kill this connection, mustn't call in user code

@@ -16,11 +16,16 @@
 
 namespace wnet{
 
-enum LogLevel { DEBUG = 1, INFO, ERROR, FATAL };
+enum class LogLevel { 
+  DEBUG = 1, 
+  INFO, 
+  ERROR, 
+  FATAL 
+};
 
 class Log {
   private: 
-    static LogLevel logLevel;
+    static LogLevel level;
     static std::string logDirectory;
     static bool isAddLogToFile;
     static bool isWithLocation;
@@ -32,15 +37,15 @@ class Log {
     
     static thread_local FILE* logFile;
 
-    static const char* getLevelStr(LogLevel level) {
-      switch(level) {
-        case DEBUG:
+    static const char* getLevelStr(LogLevel _level) {
+      switch(_level) {
+        case LogLevel::DEBUG:
           return "[DEBUG]";
-        case INFO:
+        case LogLevel::INFO:
           return "[INFO ]";
-        case ERROR:
+        case LogLevel::ERROR:
           return "[ERROR]";
-        case FATAL:
+        case LogLevel::FATAL:
           return "[FATAL]";
       }
       return nullptr;
@@ -63,14 +68,14 @@ class Log {
       logFile = ::fopen(fileNameBuf, "a");
       if(!logFile) {
         isAddLogToFile = false;
-        LOG(FATAL, "[Log][logFile %s] open log file failed", fileNameBuf);
+        LOG(LogLevel::FATAL, "[Log][logFile %s] open log file failed", fileNameBuf);
         ::exit(EXIT_FAILURE);
       }
     }
 
   public:
-    static void setLogLevel(LogLevel level) {
-      logLevel = level;
+    static void setLogLevel(LogLevel _level) {
+      level = _level;
     }
 
     static void setLogWithLocation() {
@@ -89,12 +94,12 @@ class Log {
       DIR *dir = ::opendir(directory);
       if(!dir) {
         // log directory not exist
-        LOG(INFO, "[Log][logDirectory %s] logDirectory not exist, creating...", directory);
+        LOG(LogLevel::INFO, "[Log][logDirectory %s] logDirectory not exist, creating...", directory);
         if(::mkdir(directory, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-          LOG(FATAL, "[Log][logDirectory %s] unable to create logDirectory", directory);
+          LOG(LogLevel::FATAL, "[Log][logDirectory %s] unable to create logDirectory", directory);
           ::exit(EXIT_FAILURE);
         } else {
-          LOG(INFO, "[Log][logDirectory %s] logDirectory created", directory);
+          LOG(LogLevel::INFO, "[Log][logDirectory %s] logDirectory created", directory);
         }
       } else {
         ::closedir(dir);
@@ -103,14 +108,14 @@ class Log {
     }
 
     template <typename... Args>
-    static void addLog(const char* fileName, const char* funcName, int lineNo, LogLevel level, const char* context, Args... args) {
+    static void addLog(const char* fileName, const char* funcName, int lineNo, LogLevel _level, const char* context, Args... args) {
       if(isAddLogToFile) {
         openLogFile();
       }
-      if(level >= logLevel) {
+      if(_level >= level) {
         getTime("[%m-%d %T]");
         getLocation(fileName, funcName, lineNo);
-        const char* levelStr = getLevelStr(level);
+        const char* levelStr = getLevelStr(_level);
 
         if(::strlen(levelStr) + ::strlen(timeBuf) + ::strlen(context) + (isWithLocation ? ::strlen(locationBuf) : 0) + 3 > LOG_BUF_SIZE) {
           ::printf("[log error] log context too long @ %s\n", locationBuf);
